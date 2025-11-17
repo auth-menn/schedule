@@ -25,7 +25,7 @@ class RoomSeeder extends Seeder
                 'photo'      => 'rapat-utama.jpg',
             ],
             [
-                'name'       => 'RMeeting C',
+                'name'       => 'Ruang Meeting C',
                 'capacity'   => 40,
                 'location'   => 'Lantai 2 Gedung B',
                 'facilities' => '2 Proyektor, Whiteboard 3 meter, Meja Modular, AC 2PK, Mic Wireless',
