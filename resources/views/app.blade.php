@@ -5,27 +5,18 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
         <title inertia>{{ config('app.name', 'Laravel') }}</title>
+
+        <!-- Fonts (opsional) -->
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
-        
-        @ROUTES
 
-        @env('local')
-            @viteReactRefresh
-            @vite([
-                'resources/css/app.css',      
-                'resources/js/app.tsx'        
-            ])
-        @endenv
-        
-        @production
-            @vite([
-                'resources/css/app.css',      
-                'resources/js/app.tsx'        
-            ])
-        @endproduction
-
-
+        <!-- INI YANG WAJIB & BENAR -->
+        @routes
+        @viteReactRefresh
+        @vite([
+            'resources/css/app.css',      
+            'resources/js/app.tsx'        
+        ])
         @inertiaHead
     </head>
     <body class="font-sans antialiased bg-gray-50">
