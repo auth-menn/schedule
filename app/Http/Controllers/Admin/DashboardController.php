@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Room;
 use App\Models\Reservation;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -38,8 +39,8 @@ class DashboardController extends Controller
             'title' => "{$r->title} - {$r->user->name}",
             'start' => $r->start_time,
             'end' => $r->end_time,
-            'backgroundColor' => $r->status === 'approved' ? '#10b981' : '#f59e0b',
-            'borderColor' => $r->status === 'approved' ? '#10b981' : '#f59e0b',
+            'backgroundColor' => $r->status === 'approved' ? '#10b981' : ($r->status === 'rejected' ? '#ef4444' : '#f59e0b'),
+            'borderColor' => $r->status === 'approved' ? '#10b981' : ($r->status === 'rejected' ? '#ef4444' : '#f59e0b'),
             'extendedProps' => [
                 'room' => $r->room->name,
                 'user' => $r->user->name,
@@ -56,7 +57,27 @@ class DashboardController extends Controller
 
     public function updateStatus(Request $request, Reservation $reservation)
     {
+        $request->validate([
+            'status' => 'required|in:approved,rejected'
+        ]);
+
+        // Update status reservasi
         $reservation->update(['status' => $request->status]);
-        return back()->with('success', 'Status reservasi diperbarui!');
+
+        // Buat notifikasi untuk user
+        $message = $request->status === 'approved' 
+            ? 'Reservasi Anda telah disetujui oleh admin.' 
+            : 'Reservasi Anda ditolak oleh admin.';
+
+        Notification::create([
+            'user_id' => $reservation->user_id,
+            'title' => $reservation->title,
+            'room' => $reservation->room->name,
+            'status' => $request->status,
+            'message' => $message,
+            'read' => false
+        ]);
+
+        return back()->with('success', 'Status reservasi diperbarui dan notifikasi telah dikirim!');
     }
 }
