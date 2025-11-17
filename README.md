@@ -13,7 +13,6 @@
 
 ## Laravel + TypeScript Tutorial
 
-Panduan ini akan membantu Anda menginstal Laravel dan mengatur TypeScript untuk pengembangan modern.
 
 ---
 
@@ -25,7 +24,7 @@ Sebelum memulai, pastikan sistem Anda sudah memiliki:
 - Composer
 - Node.js >= 18
 - NPM atau Yarn
-- Database (MySQL, PostgreSQL, SQLite, dll.)
+- Database MySQL
 
 Cek versi PHP dan Node:
 
