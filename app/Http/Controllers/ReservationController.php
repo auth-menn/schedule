@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Room;
 use App\Models\Reservation;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
@@ -14,8 +15,43 @@ class ReservationController extends Controller
     {
         $rooms = Room::select('id', 'name', 'capacity', 'facilities', 'location', 'photo')->get();
 
+        // Ambil notifikasi user
+        $notifications = Notification::where('user_id', Auth::id())
+            ->orderBy('created_at', 'desc')
+            ->limit(10)
+            ->get()
+            ->map(function($notif) {
+                return [
+                    'id' => $notif->id,
+                    'title' => $notif->title,
+                    'room' => $notif->room,
+                    'status' => $notif->status,
+                    'message' => $notif->message,
+                    'created_at' => $notif->created_at,
+                    'read' => $notif->read
+                ];
+            });
+        
+        // Ambil history reservasi user
+        $reservations = Reservation::where('user_id', Auth::id())
+            ->with('room')
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function($res) {
+                return [
+                    'id' => $res->id,
+                    'title' => $res->title,
+                    'room' => $res->room->name,
+                    'start' => $res->start_time,
+                    'end' => $res->end_time,
+                    'status' => $res->status
+                ];
+            });
+
         return Inertia::render('Reservations/Home', [
-            'rooms' => $rooms
+            'rooms' => $rooms,
+            'notifications' => $notifications,
+            'reservations' => $reservations
         ]);
     }
 
@@ -23,7 +59,7 @@ class ReservationController extends Controller
     {
         $reservations = Reservation::where('room_id', $room->id)
             ->select('id', 'title', 'start_time', 'end_time', 'room_id', 'user_id')
-            ->with('user:id,name') // optional: kalau mau tampilkan nama user
+            ->with('user:id,name')
             ->get();
 
         return Inertia::render('Reservations/Calendar', [
@@ -34,7 +70,6 @@ class ReservationController extends Controller
         ]);
     }
 
-    // FITUR BARU: Simpan reservasi + cek bentrok
     public function store(Request $request)
     {
         $request->validate([
@@ -58,13 +93,28 @@ class ReservationController extends Controller
         if ($conflict) {
             return back()->withErrors(['start_time' => 'Waktu tersebut sudah dibooking! Silakan pilih waktu lain.']);
         }
+        
         Reservation::create([
             'room_id'    => $request->room_id,
-            'user_id'    => Auth::id() ?? 1,
+            'user_id'    => Auth::id(),
             'title'      => $request->title,
             'start_time' => $request->start_time,
             'end_time'   => $request->end_time,
+            'status'     => 'pending', // Default status
         ]);
+        
         return back()->with('success', 'Reservasi berhasil dibuat untuk "' . $request->title . '"!');
+    }
+
+    public function cancel($id)
+    {
+        $reservation = Reservation::where('id', $id)
+            ->where('user_id', Auth::id())
+            ->whereIn('status', ['pending', 'approved'])
+            ->firstOrFail();
+        
+        $reservation->delete();
+        
+        return redirect()->back()->with('success', 'Reservasi berhasil dibatalkan');
     }
 }
