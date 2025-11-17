@@ -61,10 +61,8 @@ class DashboardController extends Controller
             'status' => 'required|in:approved,rejected'
         ]);
 
-        // Update status reservasi
         $reservation->update(['status' => $request->status]);
 
-        // Buat notifikasi untuk user
         $message = $request->status === 'approved' 
             ? 'Reservasi Anda telah disetujui oleh admin.' 
             : 'Reservasi Anda ditolak oleh admin.';
