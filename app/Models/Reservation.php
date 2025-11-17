@@ -2,19 +2,20 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Reservation extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'room_id',
         'user_id',
         'title',
-        'description',
         'start_time',
         'end_time',
-        'status', // Tambahkan ini
+        'status',
     ];
 
     protected $casts = [
@@ -22,13 +23,19 @@ class Reservation extends Model
         'end_time' => 'datetime',
     ];
 
-    public function user(): BelongsTo
-    {
-        return $this->belongsTo(User::class);
-    }
-
-    public function room(): BelongsTo
+    /**
+     * Relasi ke Room
+     */
+    public function room()
     {
         return $this->belongsTo(Room::class);
+    }
+
+    /**
+     * Relasi ke User
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 }
