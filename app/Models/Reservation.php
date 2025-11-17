@@ -22,18 +22,12 @@ class Reservation extends Model
         'start_time' => 'datetime',
         'end_time' => 'datetime',
     ];
-
-    /**
-     * Relasi ke Room
-     */
+    
     public function room()
     {
         return $this->belongsTo(Room::class);
     }
 
-    /**
-     * Relasi ke User
-     */
     public function user()
     {
         return $this->belongsTo(User::class);
