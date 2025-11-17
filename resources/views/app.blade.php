@@ -10,13 +10,27 @@
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
-        <!-- INI YANG WAJIB & BENAR -->
+        <!-- ROUTES -->
         @routes
-        @viteReactRefresh
-        @vite([
-            'resources/css/app.css',      
-            'resources/js/app.tsx'        
-        ])
+
+        <!-- VITE ASSETS -->
+                <!-- VITE ASSETS -->
+        @env('local')
+            @viteReactRefresh
+            @vite([
+                'resources/css/app.css',      
+                'resources/js/app.tsx'        
+            ])
+        @endenv
+        
+        @production
+            @vite([
+                'resources/css/app.css',      
+                'resources/js/app.tsx'        
+            ])
+        @endproduction
+
+
         @inertiaHead
     </head>
     <body class="font-sans antialiased bg-gray-50">
