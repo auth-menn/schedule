@@ -1,5 +1,4 @@
-// resources/js/Pages/Reservations/Calendar.tsx
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, Fragment } from 'react';
 import { Head, useForm, router, usePage } from '@inertiajs/react';
 import { route } from 'ziggy-js';
 
@@ -8,7 +7,6 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import { Dialog, Transition } from '@headlessui/react';
-import { Fragment } from 'react';
 import {
     ChevronDownIcon,
     CheckCircleIcon,
@@ -112,21 +110,15 @@ export default function Calendar({ selectedRoom: initialRoom, rooms, reservation
         <>
             <Head title={`Kalender - ${initialRoom.name}`} />
 
-            {/* HEADER - Simple & Clean */}
             <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
                 <div className="max-w-7xl mx-auto px-6">
                     <div className="flex justify-between items-center h-16">
-                        {/* Logo & Title */}
                         <div className="flex items-center space-x-3">
                             <CalendarIcon className="w-7 h-7 text-blue-600" />
                             <h1 className="text-lg font-semibold text-gray-900">Reservasi Ruang</h1>
                         </div>
 
-                        {/* Right Menu */}
                         <div className="flex items-center space-x-3">
-                          
-
-                            {/* User Menu */}
                             <div className="relative">
                                 <button
                                     onClick={() => setDropdownOpen(!dropdownOpen)}
@@ -164,7 +156,6 @@ export default function Calendar({ selectedRoom: initialRoom, rooms, reservation
                 </div>
             </header>
 
-            {/* Toast Notification */}
             <Transition show={showToast} as={Fragment}>
                 <div className="fixed top-20 right-6 z-50">
                     <div className="bg-white border border-green-200 shadow-lg px-4 py-3 rounded-lg flex items-center gap-3 max-w-sm">
@@ -177,11 +168,9 @@ export default function Calendar({ selectedRoom: initialRoom, rooms, reservation
                 </div>
             </Transition>
 
-            {/* Main Content */}
             <div className="min-h-screen bg-gray-50 py-6">
                 <div className="max-w-7xl mx-auto px-6">
                     <div className="bg-white rounded-lg shadow">
-                        {/* Header Section */}
                         <div className="border-b border-gray-200 px-6 py-4">
                             <div className="flex items-center justify-between">
                                 <div>
@@ -202,17 +191,12 @@ export default function Calendar({ selectedRoom: initialRoom, rooms, reservation
                             </div>
                         </div>
 
-                        {/* Calendar */}
                         <div className="p-6">
                             <FullCalendar
                                 ref={calendarRef}
                                 plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
                                 initialView="timeGridWeek"
-                                headerToolbar={{
-                                    left: 'prev,next today',
-                                    center: 'title',
-                                    right: ''
-                                }}
+                                headerToolbar={{ left: 'prev,next today', center: 'title', right: '' }}
                                 locale="id"
                                 slotMinTime="07:00:00"
                                 slotMaxTime="21:00:00"
@@ -228,7 +212,6 @@ export default function Calendar({ selectedRoom: initialRoom, rooms, reservation
                 </div>
             </div>
 
-            {/* Modal */}
             <Transition show={modalOpen} as={Fragment}>
                 <Dialog as="div" className="relative z-50" onClose={() => setModalOpen(false)}>
                     <Transition.Child as={Fragment} enter="ease-out duration-200" enterFrom="opacity-0" enterTo="opacity-100">
