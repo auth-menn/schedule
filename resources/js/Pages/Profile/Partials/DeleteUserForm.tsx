@@ -5,11 +5,16 @@ import Modal from '@/Components/Modal';
 import SecondaryButton from '@/Components/SecondaryButton';
 import TextInput from '@/Components/TextInput';
 import { useForm } from '@inertiajs/react';
-import { useRef, useState } from 'react';
+import { useRef, useState, FormEvent } from 'react';
 
-export default function DeleteUserForm({ className = '' }) {
+interface DeleteUserFormProps {
+    className?: string;
+}
+
+export default function DeleteUserForm({ className = '' }: DeleteUserFormProps) {
     const [confirmingUserDeletion, setConfirmingUserDeletion] = useState(false);
-    const passwordInput = useRef();
+
+    const passwordInput = useRef<HTMLInputElement>(null);
 
     const {
         data,
@@ -27,20 +32,19 @@ export default function DeleteUserForm({ className = '' }) {
         setConfirmingUserDeletion(true);
     };
 
-    const deleteUser = (e) => {
+    const deleteUser = (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
         destroy(route('profile.destroy'), {
             preserveScroll: true,
+            onError: () => passwordInput.current?.focus(),
             onSuccess: () => closeModal(),
-            onError: () => passwordInput.current.focus(),
             onFinish: () => reset(),
         });
     };
 
     const closeModal = () => {
         setConfirmingUserDeletion(false);
-
         clearErrors();
         reset();
     };
@@ -90,18 +94,13 @@ export default function DeleteUserForm({ className = '' }) {
                             name="password"
                             ref={passwordInput}
                             value={data.password}
-                            onChange={(e) =>
-                                setData('password', e.target.value)
-                            }
+                            onChange={(e) => setData('password', e.target.value)}
                             className="mt-1 block w-3/4"
                             isFocused
                             placeholder="Password"
                         />
 
-                        <InputError
-                            message={errors.password}
-                            className="mt-2"
-                        />
+                        <InputError message={errors.password} className="mt-2" />
                     </div>
 
                     <div className="mt-6 flex justify-end">
