@@ -101,22 +101,19 @@ export default function ReservationsHome({ rooms, notifications = [], reservatio
             <Head title="Pilih Ruangan" />
 
             {/* HEADER dengan Notifikasi & History */}
-            <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            {/* HEADER - Simple & Clean (sama seperti halaman Calendar) */}
+            <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
+                <div className="max-w-7xl mx-auto px-6">
                     <div className="flex justify-between items-center h-16">
-                        {/* Logo */}
-                        <div className="flex items-center space-x-4">
-                            <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg">
-                                <CalendarIcon className="w-8 h-8 text-white animate-pulse" />
-                            </div>
-                            <div>
-                                <h1 className="text-xl font-bold text-gray-900">
-                                    Reservasi<span className="text-indigo-600">Ruang</span>
-                                </h1>
-                            </div>
+                        {/* Logo & Title */}
+                        <div className="flex items-center space-x-3">
+                            <CalendarIcon className="w-7 h-7 text-blue-600" />
+                            <h1 className="text-lg font-semibold text-gray-900">
+                                Reservasi<span className="text-blue-600">Ruang</span>
+                            </h1>
                         </div>
 
-                        {/* Icons & User Dropdown */}
+                        {/* Right Menu - Notifikasi + History + User */}
                         <div className="flex items-center space-x-4">
                             {/* Notifikasi */}
                             <button
@@ -125,8 +122,8 @@ export default function ReservationsHome({ rooms, notifications = [], reservatio
                             >
                                 <BellIcon className="w-6 h-6 text-gray-600" />
                                 {unreadCount > 0 && (
-                                    <span className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
-                                        {unreadCount}
+                                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+                                        {unreadCount > 99 ? '99+' : unreadCount}
                                     </span>
                                 )}
                             </button>
@@ -143,40 +140,32 @@ export default function ReservationsHome({ rooms, notifications = [], reservatio
                             <div className="relative">
                                 <button
                                     onClick={() => setDropdownOpen(!dropdownOpen)}
-                                    className="flex items-center space-x-3 px-4 py-2 rounded-lg hover:bg-gray-100 transition-all duration-200 group"
+                                    className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition"
                                 >
-                                    <div className="text-right">
-                                        <p className="text-sm font-semibold text-gray-800">{user.name}</p>
-                                        <p className="text-xs text-gray-500">Karyawan</p>
-                                    </div>
-                                    <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md group-hover:scale-110 transition-transform">
+                                    <span className="text-sm font-medium text-gray-700">{user.name}</span>
+                                    <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
                                         {user.name.charAt(0).toUpperCase()}
                                     </div>
                                 </button>
 
                                 {dropdownOpen && (
-                                    <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden animate-fadeIn">
-                                        <div className="py-2">
-                                            <a href="/profile" className="flex items-center px-4 py-3 hover:bg-gray-50 transition">
-                                                <User className="w-5 h-5 mr-3 text-gray-600" />
-                                                <span className="text-sm text-gray-700">Profil Saya</span>
-                                            </a>
-                                            <a href="/" className="flex items-center px-4 py-3 hover:bg-gray-50 transition">
-                                                <HomeIcon className="w-5 h-5 mr-3 text-gray-600" />
-                                                <span className="text-sm text-gray-700">Beranda</span>
-                                            </a>
-                                            <hr className="my-2 border-gray-200" />
-                                            <button
-                                                onClick={(e) => {
-                                                    e.preventDefault();
-                                                    router.post(route('logout'));
-                                                }}
-                                                className="w-full text-left flex items-center px-4 py-3 hover:bg-red-50 text-red-600 transition"
-                                            >
-                                                <LogOut className="w-5 h-5 mr-3" />
-                                                <span className="text-sm font-medium">Logout</span>
-                                            </button>
-                                        </div>
+                                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                                        <a href="/profile" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                                            <User className="w-4 h-4 mr-2 text-gray-500" />
+                                            Profil
+                                        </a>
+                                        <a href="/" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                                            <HomeIcon className="w-4 h-4 mr-2 text-gray-500" />
+                                            Beranda
+                                        </a>
+                                        <hr className="my-1 border-gray-200" />
+                                        <button
+                                            onClick={() => router.post(route('logout'))}
+                                            className="w-full text-left flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                                        >
+                                            <LogOut className="w-4 h-4 mr-2" />
+                                            Keluar
+                                        </button>
                                     </div>
                                 )}
                             </div>
