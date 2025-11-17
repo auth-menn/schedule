@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::table('reservations', function (Blueprint $table) {
             $table->enum('status', ['pending', 'approved', 'rejected'])
                   ->default('pending')
-                  ->after('end_time'); // Sesuaikan posisi kolom
+                  ->after('end_time'); 
         });
     }
 
