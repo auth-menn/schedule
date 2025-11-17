@@ -11,12 +11,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        // Daftarkan alias middleware
         $middleware->alias([
             'admin' => \App\Http\Middleware\CheckRole::class, 
         ]);
 
-        // Hanya tambahkan HandleInertiaRequests
         $middleware->web(append: [
             \App\Http\Middleware\HandleInertiaRequests::class,
         ]);
