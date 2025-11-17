@@ -18,13 +18,14 @@ type Room = {
     location: string | null;
     facilities: string | null;
     photo: string | null;
+    photo_url?: string | null;
 };
 
 export default function RoomsIndex({ auth, rooms: initialRooms }: { auth: any; rooms: Room[] }) {
     const { flash } = usePage().props as any;
-
-    const [rooms, setRooms] = useState<Room[]>(initialRooms);
+    const [rooms] = useState<Room[]>(initialRooms);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [editingRoom, setEditingRoom] = useState<Room | null>(null);
     const [form, setForm] = useState({
         name: '',
@@ -33,8 +34,10 @@ export default function RoomsIndex({ auth, rooms: initialRooms }: { auth: any; r
         facilities: '',
         photo: null as File | null,
     });
-
     const [previewPhoto, setPreviewPhoto] = useState<string | null>(null);
+
+    const photoUrl = (room: Room) => room.photo_url || (room.photo ? `/storage/${room.photo}` : null);
+
     const openModal = (room?: Room) => {
         if (room) {
             setEditingRoom(room);
@@ -45,7 +48,7 @@ export default function RoomsIndex({ auth, rooms: initialRooms }: { auth: any; r
                 facilities: room.facilities || '',
                 photo: null,
             });
-            setPreviewPhoto(room.photo ? `/storage/${room.photo}` : null);
+            setPreviewPhoto(photoUrl(room));
         } else {
             setEditingRoom(null);
             setForm({ name: '', capacity: '', location: '', facilities: '', photo: null });
@@ -58,6 +61,7 @@ export default function RoomsIndex({ auth, rooms: initialRooms }: { auth: any; r
         setIsModalOpen(false);
         setEditingRoom(null);
         setPreviewPhoto(null);
+        setForm({ name: '', capacity: '', location: '', facilities: '', photo: null });
     };
 
     const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -70,45 +74,48 @@ export default function RoomsIndex({ auth, rooms: initialRooms }: { auth: any; r
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        setIsSubmitting(true);
 
         const formData = new FormData();
         formData.append('name', form.name);
         formData.append('capacity', form.capacity);
         formData.append('location', form.location);
         formData.append('facilities', form.facilities);
-        if (form.photo) formData.append('photo', form.photo);
+
+        if (form.photo) {
+            formData.append('photo', form.photo);
+        }
+
+        if (editingRoom && !form.photo && editingRoom.photo) {
+            formData.append('current_photo', editingRoom.photo);
+        }
 
         if (editingRoom) {
             formData.append('_method', 'PUT');
             router.post(route('admin.rooms.update', editingRoom.id), formData, {
                 forceFormData: true,
-                onSuccess: () => {
-                    closeModal();
-                    router.reload({ only: ['rooms'] });
-                },
+                onSuccess: () => closeModal(),
+                onFinish: () => setIsSubmitting(false),
             });
         } else {
             router.post(route('admin.rooms.store'), formData, {
                 forceFormData: true,
-                onSuccess: () => {
-                    closeModal();
-                    router.reload({ only: ['rooms'] });
-                },
+                onSuccess: () => closeModal(),
+                onFinish: () => setIsSubmitting(false),
             });
         }
     };
 
     const handleDelete = (id: number) => {
         if (confirm('Yakin ingin menghapus ruangan ini?')) {
-            router.delete(route('admin.rooms.destroy', id), {
-                onSuccess: () => router.reload({ only: ['rooms'] }),
-            });
+            router.delete(route('admin.rooms.destroy', id));
         }
     };
 
     return (
         <AuthenticatedLayout>
             <Head title="Manajemen Ruangan" />
+
             {flash?.success && (
                 <div className="mb-6 max-w-7xl mx-auto px-6">
                     <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg flex items-center gap-2">
@@ -135,6 +142,7 @@ export default function RoomsIndex({ auth, rooms: initialRooms }: { auth: any; r
                             Tambah Ruangan
                         </button>
                     </div>
+
                     <div className="bg-white rounded-lg shadow overflow-hidden">
                         <table className="w-full">
                             <thead className="bg-gray-50 border-b border-gray-200">
@@ -150,31 +158,23 @@ export default function RoomsIndex({ auth, rooms: initialRooms }: { auth: any; r
                                 {rooms.map((room) => (
                                     <tr key={room.id} className="hover:bg-gray-50 transition">
                                         <td className="px-6 py-4">
-                                            {room.photo ? (
-                                                <img src={`/storage/${room.photo}`} alt={room.name} className="w-16 h-16 object-cover rounded-lg" />
+                                            {photoUrl(room) ? (
+                                                <img src={photoUrl(room)!} alt={room.name} className="w-16 h-16 object-cover rounded-lg shadow-sm" />
                                             ) : (
                                                 <div className="w-16 h-16 bg-gray-200 border-2 border-dashed rounded-lg flex items-center justify-center">
                                                     <PhotoIcon className="w-8 h-8 text-gray-400" />
                                                 </div>
                                             )}
                                         </td>
-                                        <td className="px-6 py-4">
-                                            <div className="text-sm font-medium text-gray-900">{room.name}</div>
-                                        </td>
+                                        <td className="px-6 py-4 text-sm font-medium text-gray-900">{room.name}</td>
                                         <td className="px-6 py-4 text-sm text-gray-600">{room.capacity} orang</td>
                                         <td className="px-6 py-4 text-sm text-gray-600">{room.location || '-'}</td>
                                         <td className="px-6 py-4">
                                             <div className="flex gap-2">
-                                                <button
-                                                    onClick={() => openModal(room)}
-                                                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
-                                                >
+                                                <button onClick={() => openModal(room)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition">
                                                     <PencilIcon className="w-5 h-5" />
                                                 </button>
-                                                <button
-                                                    onClick={() => handleDelete(room.id)}
-                                                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
-                                                >
+                                                <button onClick={() => handleDelete(room.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition">
                                                     <TrashIcon className="w-5 h-5" />
                                                 </button>
                                             </div>
@@ -186,31 +186,16 @@ export default function RoomsIndex({ auth, rooms: initialRooms }: { auth: any; r
                     </div>
                 </div>
             </div>
+
             <Transition appear show={isModalOpen} as={Fragment}>
                 <Dialog as="div" className="relative z-50" onClose={closeModal}>
-                    <Transition.Child
-                        as={Fragment}
-                        enter="ease-out duration-300"
-                        enterFrom="opacity-0"
-                        enterTo="opacity-100"
-                        leave="ease-in duration-200"
-                        leaveFrom="opacity-100"
-                        leaveTo="opacity-0"
-                    >
+                    <Transition.Child as={Fragment} enter="ease-out duration-300" enterFrom="opacity-0" enterTo="opacity-100" leave="ease-in duration-200" leaveFrom="opacity-100" leaveTo="opacity-0">
                         <div className="fixed inset-0 bg-black bg-opacity-40" />
                     </Transition.Child>
 
                     <div className="fixed inset-0 overflow-y-auto">
                         <div className="flex min-h-full items-center justify-center p-4">
-                            <Transition.Child
-                                as={Fragment}
-                                enter="ease-out duration-300"
-                                enterFrom="opacity-0 scale-95"
-                                enterTo="opacity-100 scale-100"
-                                leave="ease-in duration-200"
-                                leaveFrom="opacity-100 scale-100"
-                                leaveTo="opacity-0 scale-95"
-                            >
+                            <Transition.Child as={Fragment} enter="ease-out duration-300" enterFrom="opacity-0 scale-95" enterTo="opacity-100 scale-100" leave="ease-in duration-200" leaveFrom="opacity-100 scale-100" leaveTo="opacity-0 scale-95">
                                 <Dialog.Panel className="w-full max-w-2xl bg-white rounded-2xl shadow-xl p-6">
                                     <div className="flex items-center justify-between mb-6">
                                         <h2 className="text-xl font-semibold text-gray-900">
@@ -292,9 +277,10 @@ export default function RoomsIndex({ auth, rooms: initialRooms }: { auth: any; r
                                             </button>
                                             <button
                                                 type="submit"
-                                                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                                                disabled={isSubmitting}
+                                                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-70"
                                             >
-                                                {editingRoom ? 'Simpan Perubahan' : 'Tambah Ruangan'}
+                                                {isSubmitting ? 'Menyimpan...' : editingRoom ? 'Simpan Perubahan' : 'Tambah Ruangan'}
                                             </button>
                                         </div>
                                     </form>
