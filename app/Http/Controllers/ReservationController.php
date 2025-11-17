@@ -15,7 +15,6 @@ class ReservationController extends Controller
     {
         $rooms = Room::select('id', 'name', 'capacity', 'facilities', 'location', 'photo')->get();
 
-        // Ambil notifikasi user
         $notifications = Notification::where('user_id', Auth::id())
             ->orderBy('created_at', 'desc')
             ->limit(10)
@@ -32,7 +31,6 @@ class ReservationController extends Controller
                 ];
             });
         
-        // Ambil history reservasi user
         $reservations = Reservation::where('user_id', Auth::id())
             ->with('room')
             ->orderBy('created_at', 'desc')
@@ -79,7 +77,6 @@ class ReservationController extends Controller
             'end_time'   => 'required|date|after:start_time',
         ]);
 
-        // CEK BENTROK WAKTU
         $conflict = Reservation::where('room_id', $request->room_id)
             ->where(function ($q) use ($request) {
                 $q->whereBetween('start_time', [$request->start_time, $request->end_time])
@@ -100,7 +97,7 @@ class ReservationController extends Controller
             'title'      => $request->title,
             'start_time' => $request->start_time,
             'end_time'   => $request->end_time,
-            'status'     => 'pending', // Default status
+            'status'     => 'pending', 
         ]);
         
         return back()->with('success', 'Reservasi berhasil dibuat untuk "' . $request->title . '"!');
