@@ -11,24 +11,20 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        // NONAKTIFKAN FOREIGN KEY CHECK sementara (BIAR BISA TRUNCATE)
         Schema::disableForeignKeyConstraints();
 
-        // Hapus semua user (sekarang boleh karena FK dimatikan)
         DB::table('users')->truncate();
 
-        // Admin Kantor
         DB::table('users')->insert([
             'name' => 'Admin Kantor',
             'email' => 'admin@kantor.com',
             'password' => Hash::make('admin123'),
             'email_verified_at' => now(),
-            'role' => 'admin', // <-- ADMIN
+            'role' => 'admin', 
             'created_at' => now(),
             'updated_at' => now(),
         ]);
 
-        // Manager
         DB::table('users')->insert([
             'name' => 'Budi Manager',
             'email' => 'budi@kantor.com',
@@ -38,7 +34,6 @@ class UserSeeder extends Seeder
             'updated_at' => now(),
         ]);
 
-        // Karyawan
         DB::table('users')->insert([
             'name' => 'Siti Karyawan',
             'email' => 'siti@kantor.com',
@@ -48,7 +43,6 @@ class UserSeeder extends Seeder
             'updated_at' => now(),
         ]);
 
-        // 7 User Random
         $names = ['Ahmad', 'Rina', 'Dedi', 'Laras', 'Fajar', 'Intan', 'Rudi'];
         foreach ($names as $index => $name) {
             DB::table('users')->insert([
@@ -61,7 +55,6 @@ class UserSeeder extends Seeder
             ]);
         }
 
-        // AKTIFKAN LAGI FOREIGN KEY CHECK
         Schema::enableForeignKeyConstraints();
 
         $this->command->info('10 User berhasil dibuat!');
