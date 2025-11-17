@@ -1,4 +1,9 @@
-export default function InputError({ message, className = '', ...props }) {
+interface InputErrorProps extends React.HTMLAttributes<HTMLParagraphElement> {
+    message?: string;
+    className?: string;
+}
+
+export default function InputError({ message, className = '', ...props }: InputErrorProps) {
     return message ? (
         <p
             {...props}
