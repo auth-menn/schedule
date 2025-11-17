@@ -12,16 +12,14 @@ class RoomController extends Controller
 {
     public function index()
     {
-        $rooms = Room::latest()->get();
+        $rooms = Room::latest()->get()->map(function ($room) {
+            $room->photo_url = $room->photo ? asset('storage/' . $room->photo) : null;
+            return $room;
+        });
 
         return Inertia::render('Admin/Rooms/Index', [
             'rooms' => $rooms
         ]);
-    }
-
-    public function create()
-    {
-        return Inertia::render('Admin/Rooms/Create');
     }
 
     public function store(Request $request)
@@ -31,7 +29,7 @@ class RoomController extends Controller
             'capacity'   => 'required|integer|min:1',
             'location'   => 'nullable|string|max:255',
             'facilities' => 'nullable|string',
-            'photo'      => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'photo'      => 'nullable|image|mimes:jpg,jpeg,png,gif,webp|max:2048',
         ]);
 
         if ($request->hasFile('photo')) {
@@ -43,13 +41,6 @@ class RoomController extends Controller
         return redirect()->route('admin.rooms.index')->with('success', 'Ruangan berhasil ditambahkan!');
     }
 
-    public function edit(Room $room)
-    {
-        return Inertia::render('Admin/Rooms/Edit', [
-            'room' => $room
-        ]);
-    }
-
     public function update(Request $request, Room $room)
     {
         $validated = $request->validate([
@@ -57,7 +48,8 @@ class RoomController extends Controller
             'capacity'   => 'required|integer|min:1',
             'location'   => 'nullable|string|max:255',
             'facilities' => 'nullable|string',
-            'photo'      => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'photo'      => 'nullable|image|mimes:jpg,jpeg,png,gif,webp|max:2048',
+            'current_photo' => 'nullable|string',
         ]);
 
         if ($request->hasFile('photo')) {
@@ -65,6 +57,8 @@ class RoomController extends Controller
                 Storage::disk('public')->delete($room->photo);
             }
             $validated['photo'] = $request->file('photo')->store('rooms', 'public');
+        } elseif ($request->filled('current_photo')) {
+            $validated['photo'] = $request->current_photo;
         }
 
         $room->update($validated);
