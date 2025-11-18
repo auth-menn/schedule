@@ -14,8 +14,6 @@ import {
     ArrowRightOnRectangleIcon as LogOut,
     UserCircleIcon as User,
     HomeIcon,
-    BellIcon,
-    ClockIcon
 } from '@heroicons/react/24/outline';
 
 interface Room {
@@ -30,16 +28,22 @@ interface Reservation {
     end_time: string;
     room_id: number;
     user_id?: number;
+    status?: 'pending' | 'approved' | 'rejected'; 
 }
 
 interface Props {
     selectedRoom: Room;
     rooms: Room[];
-    reservations: Reservation[];
+    reservations?: Reservation[]; 
     flash?: { success: string };
 }
 
-export default function Calendar({ selectedRoom: initialRoom, rooms, reservations, flash }: Props) {
+export default function Calendar({
+    selectedRoom: initialRoom,
+    rooms,
+    reservations = [],        
+    flash,
+}: Props) {
     const { auth } = usePage().props as any;
     const user = auth.user;
 
@@ -66,17 +70,61 @@ export default function Calendar({ selectedRoom: initialRoom, rooms, reservation
             return () => clearTimeout(timer);
         }
     }, [flash]);
+    const filteredEvents = (Array.isArray(reservations) ? reservations : [])
+        .filter((r): r is Reservation => !!r && r.room_id === selectedRoomId)
+        .map((r) => {
+            const status = r.status ?? 'pending';
 
-    const filteredEvents = reservations
-        .filter(r => r.room_id === selectedRoomId)
-        .map(r => ({
-            id: r.id.toString(),
-            title: r.title,
-            start: r.start_time,
-            end: r.end_time,
-            backgroundColor: '#2563eb',
-            borderColor: '#1d4ed8',
-        }));
+            let backgroundColor = '#6b7280';
+            let borderColor = '#4b5563';
+            let titleSuffix = '';
+            let display: 'auto' | 'background' = 'auto';
+
+            if (status === 'approved') {
+                backgroundColor = '#10b981';
+                borderColor = '#059669';
+            } else if (status === 'pending') {
+                backgroundColor = '#f59e0b'; 
+                borderColor = '#d97706';
+                titleSuffix = ' (Menunggu)';
+            } else if (status === 'rejected') {
+                backgroundColor = '#ef4444'; 
+                borderColor = '#dc2626';
+                titleSuffix = ' (Ditolak)';
+                display = 'background'; 
+            }
+
+            return {
+                id: String(r.id),
+                title: r.title + titleSuffix,
+                start: r.start_time,
+                end: r.end_time,
+                backgroundColor,
+                borderColor,
+                textColor: '#ffffff',
+                display,
+                extendedProps: {
+                    status,
+                    user_id: r.user_id,
+                },
+            };
+        });
+    const selectAllow = (selectInfo: any) => {
+        if (!calendarRef.current) return true;
+
+        const calendarApi = calendarRef.current.getApi();
+        const overlappingApproved = calendarApi
+            .getEvents()
+            .some((event) => {
+                if (event.extendedProps?.status !== 'approved') return false;
+                return (
+                    selectInfo.start < event.end! &&
+                    selectInfo.end > event.start!
+                );
+            });
+
+        return !overlappingApproved;
+    };
 
     const handleDateSelect = (selectInfo: any) => {
         setSelectInfo(selectInfo);
@@ -109,7 +157,6 @@ export default function Calendar({ selectedRoom: initialRoom, rooms, reservation
     return (
         <>
             <Head title={`Kalender - ${initialRoom.name}`} />
-
             <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
                 <div className="max-w-7xl mx-auto px-6">
                     <div className="flex justify-between items-center h-16">
@@ -155,7 +202,6 @@ export default function Calendar({ selectedRoom: initialRoom, rooms, reservation
                     </div>
                 </div>
             </header>
-
             <Transition show={showToast} as={Fragment}>
                 <div className="fixed top-20 right-6 z-50">
                     <div className="bg-white border border-green-200 shadow-lg px-4 py-3 rounded-lg flex items-center gap-3 max-w-sm">
@@ -167,7 +213,6 @@ export default function Calendar({ selectedRoom: initialRoom, rooms, reservation
                     </div>
                 </div>
             </Transition>
-
             <div className="min-h-screen bg-gray-50 py-6">
                 <div className="max-w-7xl mx-auto px-6">
                     <div className="bg-white rounded-lg shadow">
@@ -204,6 +249,7 @@ export default function Calendar({ selectedRoom: initialRoom, rooms, reservation
                                 selectable={true}
                                 selectOverlap={false}
                                 eventOverlap={false}
+                                selectAllow={selectAllow}        
                                 select={handleDateSelect}
                                 events={filteredEvents}
                             />
@@ -240,20 +286,20 @@ export default function Calendar({ selectedRoom: initialRoom, rooms, reservation
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-1">Mulai</label>
-                                                <input 
-                                                    type="datetime-local" 
-                                                    value={data.start_time.slice(0,16)} 
-                                                    onChange={e => setData('start_time', e.target.value)}
+                                                <input
+                                                    type="datetime-local"
+                                                    value={data.start_time.slice(0, 16)}
+                                                    onChange={e => setData('start_time', e.target.value + ':00')} // tambah detik
                                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                                                     required
                                                 />
                                             </div>
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-1">Selesai</label>
-                                                <input 
-                                                    type="datetime-local" 
-                                                    value={data.end_time.slice(0,16)} 
-                                                    onChange={e => setData('end_time', e.target.value)}
+                                                <input
+                                                    type="datetime-local"
+                                                    value={data.end_time.slice(0, 16)}
+                                                    onChange={e => setData('end_time', e.target.value + ':00')}
                                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                                                     required
                                                 />
