@@ -56,14 +56,13 @@ class ReservationController extends Controller
     public function showCalendar(Room $room)
     {
         $reservations = Reservation::where('room_id', $room->id)
-            ->select('id', 'title', 'start_time', 'end_time', 'room_id', 'user_id')
+            ->select('id', 'title', 'start_time', 'end_time', 'room_id', 'user_id', 'status')
             ->with('user:id,name')
             ->get();
 
         return Inertia::render('Reservations/Calendar', [
             'selectedRoom' => $room,
             'rooms' => Room::select('id', 'name')->get(),
-            'reservations' => $reservations,
             'flash' => session('success') ? ['success' => session('success')] : null,
         ]);
     }
