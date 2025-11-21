@@ -8,7 +8,6 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import { Dialog, Transition } from '@headlessui/react';
 import {
-    ChevronDownIcon,
     CheckCircleIcon,
     CalendarIcon,
     ArrowRightOnRectangleIcon as LogOut,
@@ -28,7 +27,7 @@ interface Reservation {
     end_time: string;
     room_id: number;
     user_id?: number;
-    status?: 'pending' | 'approved' | 'rejected'; 
+    status?: 'pending' | 'approved' | 'rejected' | 'cancelled'; 
 }
 
 interface Props {
@@ -70,42 +69,45 @@ export default function Calendar({
             return () => clearTimeout(timer);
         }
     }, [flash]);
+
     const filteredEvents = (Array.isArray(reservations) ? reservations : [])
-        .filter((r): r is Reservation => !!r && r.room_id === selectedRoomId)
+        .filter((r): r is Reservation => {
+            if (!r || r.room_id !== selectedRoomId) return false;
+            
+            if (r.status === 'cancelled' || r.status === 'rejected') return false;
+            
+            return true;
+        })
         .map((r) => {
             const status = r.status ?? 'pending';
+            const isOwnReservation = r.user_id === user.id;
 
-            let backgroundColor = '#6b7280';
-            let borderColor = '#4b5563';
+            let backgroundColor = '#10b981'; 
+            let borderColor = '#059669';
             let titleSuffix = '';
-            let display: 'auto' | 'background' = 'auto';
-
             if (status === 'approved') {
                 backgroundColor = '#10b981';
                 borderColor = '#059669';
-            } else if (status === 'pending') {
+                titleSuffix = isOwnReservation ? ' (Disetujui)' : ' (Terisi)';
+            } 
+            else if (status === 'pending') {
                 backgroundColor = '#f59e0b'; 
                 borderColor = '#d97706';
-                titleSuffix = ' (Menunggu)';
-            } else if (status === 'rejected') {
-                backgroundColor = '#ef4444'; 
-                borderColor = '#dc2626';
-                titleSuffix = ' (Ditolak)';
-                display = 'background'; 
+                titleSuffix = ' (Menunggu Persetujuan)';
             }
 
             return {
                 id: String(r.id),
-                title: r.title + titleSuffix,
+                title: isOwnReservation ? r.title + titleSuffix : 'Terisi',
                 start: r.start_time,
                 end: r.end_time,
                 backgroundColor,
                 borderColor,
                 textColor: '#ffffff',
-                display,
                 extendedProps: {
                     status,
                     user_id: r.user_id,
+                    isOwnReservation,
                 },
             };
         });
@@ -113,17 +115,18 @@ export default function Calendar({
         if (!calendarRef.current) return true;
 
         const calendarApi = calendarRef.current.getApi();
-        const overlappingApproved = calendarApi
+        const hasOverlap = calendarApi
             .getEvents()
             .some((event) => {
                 if (event.extendedProps?.status !== 'approved') return false;
+                
                 return (
                     selectInfo.start < event.end! &&
                     selectInfo.end > event.start!
                 );
             });
 
-        return !overlappingApproved;
+        return !hasOverlap;
     };
 
     const handleDateSelect = (selectInfo: any) => {
@@ -178,7 +181,7 @@ export default function Calendar({
                                 </button>
 
                                 {dropdownOpen && (
-                                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1">
+                                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
                                         <a href="/profile" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
                                             <User className="w-4 h-4 mr-2 text-gray-500" />
                                             Profil
@@ -213,6 +216,7 @@ export default function Calendar({
                     </div>
                 </div>
             </Transition>
+
             <div className="min-h-screen bg-gray-50 py-6">
                 <div className="max-w-7xl mx-auto px-6">
                     <div className="bg-white rounded-lg shadow">
@@ -253,11 +257,24 @@ export default function Calendar({
                                 select={handleDateSelect}
                                 events={filteredEvents}
                             />
+                            <div className="mt-4 flex flex-wrap gap-4 text-sm">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-4 h-4 rounded bg-green-500"></div>
+                                    <span className="text-gray-600">Disetujui / Terisi</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <div className="w-4 h-4 rounded bg-yellow-500"></div>
+                                    <span className="text-gray-600">Menunggu Persetujuan (Milik Anda)</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <div className="w-4 h-4 rounded border-2 border-gray-300"></div>
+                                    <span className="text-gray-600">Slot Kosong (Bisa Direservasi)</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-
             <Transition show={modalOpen} as={Fragment}>
                 <Dialog as="div" className="relative z-50" onClose={() => setModalOpen(false)}>
                     <Transition.Child as={Fragment} enter="ease-out duration-200" enterFrom="opacity-0" enterTo="opacity-100">
@@ -289,7 +306,7 @@ export default function Calendar({
                                                 <input
                                                     type="datetime-local"
                                                     value={data.start_time.slice(0, 16)}
-                                                    onChange={e => setData('start_time', e.target.value + ':00')} // tambah detik
+                                                    onChange={e => setData('start_time', e.target.value + ':00')}
                                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                                                     required
                                                 />
