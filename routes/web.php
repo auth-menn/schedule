@@ -22,6 +22,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('room.calendar');
     Route::post('/reservations', [ReservationController::class, 'store'])
         ->name('reservations.store');
+    Route::delete('/reservations/{reservation}/cancel', [ReservationController::class, 'cancel'])
+        ->name('reservations.cancel')
+        ->middleware('auth');
 
     Route::prefix('admin')
         ->middleware('admin:admin')
