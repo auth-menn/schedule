@@ -34,19 +34,28 @@ class DashboardController extends Controller
                 'status' => $r->status,
             ]);
 
-        $events = Reservation::with(['user', 'room'])->get()->map(fn($r) => [
-            'id' => $r->id,
-            'title' => "{$r->title} - {$r->user->name}",
-            'start' => $r->start_time,
-            'end' => $r->end_time,
-            'backgroundColor' => $r->status === 'approved' ? '#10b981' : ($r->status === 'rejected' ? '#ef4444' : '#f59e0b'),
-            'borderColor' => $r->status === 'approved' ? '#10b981' : ($r->status === 'rejected' ? '#ef4444' : '#f59e0b'),
-            'extendedProps' => [
-                'room' => $r->room->name,
-                'user' => $r->user->name,
-                'status' => $r->status,
-            ],
-        ]);
+        $events = Reservation::with(['user', 'room'])->get()->map(function($r) {
+            $backgroundColor = match($r->status) {
+                'approved' => '#10b981', 
+                'rejected' => '#ef4444',  
+                'cancelled' => '#6b7280',
+                default => '#f59e0b',     
+            };
+
+            return [
+                'id' => $r->id,
+                'title' => "{$r->title} - {$r->user->name}",
+                'start' => $r->start_time,
+                'end' => $r->end_time,
+                'backgroundColor' => $backgroundColor,
+                'borderColor' => $backgroundColor,
+                'extendedProps' => [
+                    'room' => $r->room->name,
+                    'user' => $r->user->name,
+                    'status' => $r->status,
+                ],
+            ];
+        });
 
         return Inertia::render('Admin/Dashboard', [
             'stats' => $stats,
