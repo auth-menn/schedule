@@ -8,7 +8,7 @@ use App\Models\Notification;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
-
+use Illuminate\Support\Facades\Log;
 class ReservationController extends Controller
 {
     public function home()
@@ -87,6 +87,7 @@ class ReservationController extends Controller
         ]);
 
         $conflict = Reservation::where('room_id', $request->room_id)
+            ->where('status', 'approved')
             ->where(function ($q) use ($request) {
                 $q->whereBetween('start_time', [$request->start_time, $request->end_time])
                   ->orWhereBetween('end_time', [$request->start_time, $request->end_time])
@@ -114,7 +115,25 @@ class ReservationController extends Controller
 
     public function cancel(Reservation $reservation)
     {
-        if ($reservation->user_id !== Auth::id()) {
+        $authUserId = Auth::id();
+        $reservationUserId = $reservation->user_id;
+        
+        Log::info('Cancel Reservation Attempt', [
+            'reservation_id' => $reservation->id,
+            'reservation_user_id' => $reservationUserId,
+            'reservation_user_id_type' => gettype($reservationUserId),
+            'auth_user_id' => $authUserId,
+            'auth_user_id_type' => gettype($authUserId),
+            'strict_match' => ($reservationUserId === $authUserId),
+            'loose_match' => ($reservationUserId == $authUserId),
+            'int_match' => ((int)$reservationUserId === (int)$authUserId),
+        ]);
+        
+        if ((int)$reservationUserId !== (int)$authUserId) {
+            Log::error('Authorization Failed', [
+                'reservation_user_id' => $reservationUserId,
+                'auth_user_id' => $authUserId,
+            ]);
             abort(403, 'Anda tidak memiliki akses untuk membatalkan reservasi ini.');
         }
         
@@ -123,6 +142,7 @@ class ReservationController extends Controller
         }
         
         $reservation->update(['status' => 'cancelled']);
+        
         Notification::create([
             'user_id' => $reservation->user_id,
             'title' => $reservation->title,
