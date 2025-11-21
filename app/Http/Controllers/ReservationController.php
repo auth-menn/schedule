@@ -34,6 +34,7 @@ class ReservationController extends Controller
         $reservations = Reservation::where('user_id', Auth::id())
             ->with('room')
             ->orderBy('created_at', 'desc')
+            ->limit(20) 
             ->get()
             ->map(function($res) {
                 return [
@@ -55,7 +56,15 @@ class ReservationController extends Controller
 
     public function showCalendar(Room $room)
     {
+        $userId = Auth::id();
         $reservations = Reservation::where('room_id', $room->id)
+            ->where(function($query) use ($userId) {
+                $query->where('status', 'approved') 
+                      ->orWhere(function($q) use ($userId) {
+                          $q->where('user_id', $userId)
+                            ->where('status', 'pending'); 
+                      });
+            })
             ->select('id', 'title', 'start_time', 'end_time', 'room_id', 'user_id', 'status')
             ->with('user:id,name')
             ->get();
@@ -63,6 +72,7 @@ class ReservationController extends Controller
         return Inertia::render('Reservations/Calendar', [
             'selectedRoom' => $room,
             'rooms' => Room::select('id', 'name')->get(),
+            'reservations' => $reservations,
             'flash' => session('success') ? ['success' => session('success')] : null,
         ]);
     }
@@ -102,15 +112,26 @@ class ReservationController extends Controller
         return back()->with('success', 'Reservasi berhasil dibuat untuk "' . $request->title . '"!');
     }
 
-    public function cancel($id)
+    public function cancel(Reservation $reservation)
     {
-        $reservation = Reservation::where('id', $id)
-            ->where('user_id', Auth::id())
-            ->whereIn('status', ['pending', 'approved'])
-            ->firstOrFail();
+        if ($reservation->user_id !== Auth::id()) {
+            abort(403, 'Anda tidak memiliki akses untuk membatalkan reservasi ini.');
+        }
         
-        $reservation->delete();
+        if (!in_array($reservation->status, ['pending', 'approved'])) {
+            return back()->with('error', 'Reservasi tidak dapat dibatalkan. Status: ' . $reservation->status);
+        }
         
-        return redirect()->back()->with('success', 'Reservasi berhasil dibatalkan');
+        $reservation->update(['status' => 'cancelled']);
+        Notification::create([
+            'user_id' => $reservation->user_id,
+            'title' => $reservation->title,
+            'room' => $reservation->room->name,
+            'status' => 'cancelled',
+            'message' => 'Anda telah membatalkan reservasi ini.',
+            'read' => false
+        ]);
+        
+        return back()->with('success', 'Reservasi berhasil dibatalkan');
     }
 }
