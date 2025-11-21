@@ -41,6 +41,17 @@ export default function Dashboard({ auth, stats, reservations, events }: any) {
         calendarRef.current?.getApi().changeView(view);
     };
 
+    const getStatusBadge = (status: string) => {
+        const badges = {
+            approved: { bg: 'bg-green-100', text: 'text-green-800', label: 'Disetujui' },
+            rejected: { bg: 'bg-red-100', text: 'text-red-800', label: 'Ditolak' },
+            cancelled: { bg: 'bg-gray-100', text: 'text-gray-800', label: 'Dibatalkan' },
+            pending: { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'Menunggu' },
+        };
+        
+        return badges[status as keyof typeof badges] || badges.pending;
+    };
+
     const statsCards = [
         {
             title: 'Total Ruangan',
@@ -155,37 +166,19 @@ export default function Dashboard({ auth, stats, reservations, events }: any) {
                                 slotMinTime="07:00:00"
                                 slotMaxTime="22:00:00"
                                 height="650px"
-                                events={events.map((ev: any) => {
-                                    let backgroundColor = '#6366f1';
-                                    let borderColor = '#4f46e5';
-
-                                    if (ev.extendedProps?.status === 'approved') {
-                                        backgroundColor = '#10b981';
-                                        borderColor = '#059669';
-                                    } else if (ev.extendedProps?.status === 'rejected') {
-                                        backgroundColor = '#ef4444';
-                                        borderColor = '#dc2626';
-                                    } else if (ev.extendedProps?.status === 'pending') {
-                                        backgroundColor = '#f59e0b';
-                                        borderColor = '#d97706';
-                                    }
-
-                                    return {
-                                        ...ev,
-                                        backgroundColor,
-                                        borderColor,
-                                        textColor: '#ffffff',
-                                    };
-                                })}
+                                events={events}
                                 eventClick={(info) => {
                                     const e = info.event;
                                     const p = e.extendedProps;
-                                    const statusText =
-                                        p.status === 'approved'
-                                            ? 'Disetujui'
-                                            : p.status === 'rejected'
-                                            ? 'Ditolak'
-                                            : 'Menunggu';
+                                    
+                                    const statusLabels: Record<string, string> = {
+                                        approved: 'Disetujui',
+                                        rejected: 'Ditolak',
+                                        cancelled: 'Dibatalkan',
+                                        pending: 'Menunggu'
+                                    };
+                                    
+                                    const statusText = statusLabels[p.status] || 'Menunggu';
 
                                     alert(
                                         `Judul: ${e.title}\n` +
@@ -218,56 +211,53 @@ export default function Dashboard({ auth, stats, reservations, events }: any) {
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
-                                    {reservations.map((r: any) => (
-                                        <tr key={r.id} className="hover:bg-gray-50 transition">
-                                            <td className="px-6 py-4 text-sm font-medium text-gray-900">{r.title}</td>
-                                            <td className="px-6 py-4 text-sm text-gray-600">{r.user}</td>
-                                            <td className="px-6 py-4 text-sm text-gray-600">{r.room}</td>
-                                            <td className="px-6 py-4">
-                                                <div className="text-xs text-gray-600">
-                                                    <div>{new Date(r.start).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
-                                                    <div className="text-gray-500">
-                                                        {new Date(r.start).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} -{' '}
-                                                        {new Date(r.end).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                                    {reservations.map((r: any) => {
+                                        const badge = getStatusBadge(r.status);
+                                        return (
+                                            <tr key={r.id} className="hover:bg-gray-50 transition">
+                                                <td className="px-6 py-4 text-sm font-medium text-gray-900">{r.title}</td>
+                                                <td className="px-6 py-4 text-sm text-gray-600">{r.user}</td>
+                                                <td className="px-6 py-4 text-sm text-gray-600">{r.room}</td>
+                                                <td className="px-6 py-4">
+                                                    <div className="text-xs text-gray-600">
+                                                        <div>{new Date(r.start).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
+                                                        <div className="text-gray-500">
+                                                            {new Date(r.start).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} -{' '}
+                                                            {new Date(r.end).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <span
-                                                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                                        r.status === 'approved'
-                                                            ? 'bg-green-100 text-green-800'
-                                                            : r.status === 'rejected'
-                                                            ? 'bg-red-100 text-red-800'
-                                                            : 'bg-yellow-100 text-yellow-800'
-                                                    }`}
-                                                >
-                                                    {r.status === 'approved' ? 'Disetujui' : r.status === 'rejected' ? 'Ditolak' : 'Menunggu'}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                {r.status === 'pending' && (
-                                                    <div className="flex gap-2">
-                                                        <button
-                                                            onClick={() => handleStatusChange(r.id, 'approved')}
-                                                            className="inline-flex items-center px-3 py-1.5 bg-green-50 hover:bg-green-100 text-green-700 text-xs font-medium rounded-md transition"
-                                                        >
-                                                            <CheckCircleIcon className="w-4 h-4 mr-1" />
-                                                            Setujui
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleStatusChange(r.id, 'rejected')}
-                                                            className="inline-flex items-center px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-medium rounded-md transition"
-                                                        >
-                                                            <XCircleIcon className="w-4 h-4 mr-1" />
-                                                            Tolak
-                                                        </button>
-                                                    </div>
-                                                )}
-                                                {r.status !== 'pending' && <span className="text-xs text-gray-400">-</span>}
-                                            </td>
-                                        </tr>
-                                    ))}
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span
+                                                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badge.bg} ${badge.text}`}
+                                                    >
+                                                        {badge.label}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    {r.status === 'pending' && (
+                                                        <div className="flex gap-2">
+                                                            <button
+                                                                onClick={() => handleStatusChange(r.id, 'approved')}
+                                                                className="inline-flex items-center px-3 py-1.5 bg-green-50 hover:bg-green-100 text-green-700 text-xs font-medium rounded-md transition"
+                                                            >
+                                                                <CheckCircleIcon className="w-4 h-4 mr-1" />
+                                                                Setujui
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleStatusChange(r.id, 'rejected')}
+                                                                className="inline-flex items-center px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-medium rounded-md transition"
+                                                            >
+                                                                <XCircleIcon className="w-4 h-4 mr-1" />
+                                                                Tolak
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                    {r.status !== 'pending' && <span className="text-xs text-gray-400">-</span>}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
                                 </tbody>
                             </table>
                         </div>
